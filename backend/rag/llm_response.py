@@ -9,19 +9,18 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL")
 retriever = get_retriever()
 
-async def get_chat_response(user_query):
+
+async def get_chat_response(user_query, chat_history):
     docs = retriever.get_relevant_documents(user_query)
     context = "\n\n".join([doc.page_content for doc in docs])
 
-    prompt = f"""You are a supportive mental health assistant. Use the following verified information to respond empathetically:
+    messages = [{"role": "system", "content": "You are a compassionate mental health support assistant."}]
 
-    Context:
-    {context}
+    for pair in chat_history:
+        messages.append({"role": "user", "content": pair["user"]})
+        messages.append({"role": "assistant", "content": pair["bot"]})
 
-    Question:
-    {user_query}
-
-    Answer:"""
+    messages.append({"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"})
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -30,10 +29,7 @@ async def get_chat_response(user_query):
 
     payload = {
         "model": GROQ_MODEL,
-        "messages": [
-            {"role": "system", "content": "You are a compassionate mental health support assistant."},
-            {"role": "user", "content": prompt}
-        ]
+        "messages": messages
     }
 
     async with httpx.AsyncClient() as client:
