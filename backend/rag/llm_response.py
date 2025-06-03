@@ -9,10 +9,18 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_MODEL = os.getenv("GROQ_MODEL")
 retriever = get_retriever()
 
-
-async def get_chat_response(user_query, history=None, tone="Supportive", length="Short"):
+async def get_chat_response(user_query, history=None, tone="Supportive", length="Short", emotion="😊"):
     docs = retriever.get_relevant_documents(user_query)
     context = "\n\n".join([doc.page_content for doc in docs])
+
+    # Optional: modify tone based on emotion
+    emotion_map = {
+        "😊": "Friendly",
+        "😐": "Neutral",
+        "😢": "Supportive",
+        "😡": "Calm and Understanding"
+    }
+    tone = emotion_map.get(emotion, tone)
 
     tone_instruction = f"Respond in a {tone.lower()} tone."
     length_instruction = "Keep the response brief." if length == "Short" else "Provide a detailed explanation."
@@ -52,4 +60,3 @@ Answer:"""
 
     result = response.json()
     return result["choices"][0]["message"]["content"]
-

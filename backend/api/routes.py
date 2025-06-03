@@ -11,8 +11,8 @@ async def ask_bot(req: Request):
     history = data.get("history", [])
     tone = data.get("tone", "Supportive")
     length = data.get("length", "Short")
+    emotion = data.get("emotion", "😊")  # New field
 
-    response = await get_chat_response(query, history, tone, length)
-    save_query(query, response)
+    response = await get_chat_response(query, history, tone, length, emotion)
+    save_query(query, response, emotion)
     return {"response": response}
-
