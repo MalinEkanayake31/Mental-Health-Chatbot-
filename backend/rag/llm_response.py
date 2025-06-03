@@ -10,17 +10,25 @@ GROQ_MODEL = os.getenv("GROQ_MODEL")
 retriever = get_retriever()
 
 
-async def get_chat_response(user_query, chat_history):
+async def get_chat_response(user_query, history=None, tone="Supportive", length="Short"):
     docs = retriever.get_relevant_documents(user_query)
     context = "\n\n".join([doc.page_content for doc in docs])
 
-    messages = [{"role": "system", "content": "You are a compassionate mental health support assistant."}]
+    tone_instruction = f"Respond in a {tone.lower()} tone."
+    length_instruction = "Keep the response brief." if length == "Short" else "Provide a detailed explanation."
 
-    for pair in chat_history:
-        messages.append({"role": "user", "content": pair["user"]})
-        messages.append({"role": "assistant", "content": pair["bot"]})
+    prompt = f"""You are a mental health assistant.
+Use the following verified context to answer empathetically.
 
-    messages.append({"role": "user", "content": f"Context:\n{context}\n\nQuestion:\n{user_query}"})
+{tone_instruction} {length_instruction}
+
+Context:
+{context}
+
+Question:
+{user_query}
+
+Answer:"""
 
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -29,11 +37,19 @@ async def get_chat_response(user_query, chat_history):
 
     payload = {
         "model": GROQ_MODEL,
-        "messages": messages
+        "messages": [
+            {"role": "system", "content": "You are a compassionate mental health support assistant."},
+            {"role": "user", "content": prompt}
+        ]
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload)
+        response = await client.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers=headers,
+            json=payload
+        )
 
     result = response.json()
     return result["choices"][0]["message"]["content"]
+

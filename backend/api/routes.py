@@ -8,7 +8,11 @@ router = APIRouter()
 async def ask_bot(req: Request):
     data = await req.json()
     query = data["query"]
-    history = data.get("history", [])  # chat history from frontend
-    response = await get_chat_response(query, history)
+    history = data.get("history", [])
+    tone = data.get("tone", "Supportive")
+    length = data.get("length", "Short")
+
+    response = await get_chat_response(query, history, tone, length)
     save_query(query, response)
     return {"response": response}
+
